@@ -19,7 +19,7 @@ pi.set_pull_up_down(17, pigpio.PUD_DOWN)
 alarmF  = False
 alarmTime  = "00:00"
 playing = False
-
+ 
 def readBytes():
 	#pi = pigpio.pi()
 	#h1 = pi.serial_open('/dev/ttyS0', 9600)
