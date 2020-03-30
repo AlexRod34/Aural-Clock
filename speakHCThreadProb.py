@@ -154,33 +154,37 @@ def playAlarm():
 
 def keepReadingTVAButton():
 	global playing
-	while 1:
-	#make a delayyyy
-		#pigpio.pulse(27, 27, 1000000)
-		if (pi.read(27) == 1):
-			os.chdir("/home/pi")
-                	#currentTime = time.ctime()
-                	now = datetime.now()
-                	currentTime =""
-                	currentTime = now.strftime("%H:%M:%S")
-                	f2 = open("curTime.txt", "w")
-                	f2.write(currentTime[0:5])
-                	f2.close()
-                	os.chdir("/home/pi/flite")
-                	q = sub.Popen(['./bin/flite','/home/pi/curTime.txt','testtime.wav'])
-                	print(os.getcwd())
-                	q = sub.Popen(['aplay','testtime.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
-                	q.communicate()         
-                	print(currentTime)
+	try:
+        while 1:
+        #make a delayyyy
+            #pigpio.pulse(27, 27, 1000000)
+            if (pi.read(27) == 1):
+                os.chdir("/home/pi")
+                        #currentTime = time.ctime()
+                        now = datetime.now()
+                        currentTime =""
+                        currentTime = now.strftime("%H:%M:%S")
+                        f2 = open("curTime.txt", "w")
+                        f2.write(currentTime[0:5])
+                        f2.close()
+                        os.chdir("/home/pi/flite")
+                        q = sub.Popen(['./bin/flite','/home/pi/curTime.txt','testtime.wav'])
+                        print(os.getcwd())
+                        q = sub.Popen(['aplay','testtime.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
+                        q.communicate()         
+                        print(currentTime)
 
 
 
-		if(pi.read(5) == 1):
-			os.system("amixer set Speaker 5%+")
-		if(pi.read(6) == 1):
-			os.system("amixer set Speaker 5%-")
-		if pi.read(17) == 1 and playing:
-                        playing = False
+            if(pi.read(5) == 1):
+                os.system("amixer set Speaker 5%+")
+            if(pi.read(6) == 1):
+                os.system("amixer set Speaker 5%-")
+            if pi.read(17) == 1 and playing:
+                            playing = False
+    except Exception as e:
+        print(e)
+        keepReadingTVAButton()
 
 if __name__ == "__main__":
 	try:
