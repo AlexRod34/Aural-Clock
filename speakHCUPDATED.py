@@ -126,8 +126,8 @@ def listenVoice():
 				os.system("./bin/flite /home/pi/curTime.txt testtime.wav")
                         	print(currentTime)
                         	os.system("aplay testtime.wav")
-			#if 'when is the alarm' or 'when is alarm' is heard
-			elif str(phrase) == "WHEN IS THE ALARM" or str(phrase) == "WHEN IS ALARM":
+			#if 'alarm time' is heard
+			elif str(phrase) == "ALARM TIME":
 				print("alarm time was asked")
 				os.chdir("/home/pi")
 				f2 = open("alarmTime.txt", "w")
