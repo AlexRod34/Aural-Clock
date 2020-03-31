@@ -4,8 +4,17 @@ what is the time
 reset alarm
 alarm reset
 set alarm to
-turn volume down
-turn volume up
+set the alarm to
+alarm off
+alarm on
+volume down
+volume up
+volume one hundred
+volume zero
+p
+m
+a
+m
 pm
 am
 one
