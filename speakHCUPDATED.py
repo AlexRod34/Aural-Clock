@@ -134,9 +134,9 @@ def listenVoice():
 				f2.write("The alarm is at " + alarmTime)
 				f2.close()
 				os.chdir("/home/pi/flite")
-				os.system("./bin/flite /home/pi/curTime.txt testtime.wav")
+				os.system("./bin/flite /home/pi/curTime.txt alarm_time.wav")
                         	print(alarmTime)
-                        	os.system("aplay testtime.wav")
+                        	os.system("aplay alarm_time.wav")
 			#if 'reset alarm/alarm reset' is heard
 			elif(str(phrase) == "RESET ALARM" or str(phrase) == "ALARM RESET"):
 				playing = False
