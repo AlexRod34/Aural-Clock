@@ -92,6 +92,7 @@ def keepReadingBT():
 def listenVoice():
 	global playing
 	global alarmF
+	global alarmTime
 	while 1:
 		# TODO: detect speech and obtain string
 		# sets up speech class to listen
@@ -185,6 +186,19 @@ def listenVoice():
 				else:
         				time = time + ":" + "00"
 				print("Alarm time: " + time + daynight)
+				if((daynight =="AM") or (daynight == "A")):
+					# correct time for AM time in military time
+					if(int(time[0:2]) == 12):		#midnight time
+						alarmTime = "00" + time[2:]
+					else:
+						alarmTime = time
+				elif((daynight == "PM") or (daynight == "p")):
+					# correct time for PM time in military time
+					if(int(time[0:2]) == 12):		#mid day time 
+						alarmTime = time
+					else:
+						tempHourAdjust = 12 + int(time[0:2])
+						alarmTime = str(tempHourAdjust) + time[2:]
 
 
 
@@ -248,6 +262,7 @@ def keepReadingTVAButton():
 			if pi.read(17) == 1 and playing:
                         	playing = False
 			if pi.read(27) == 1 and pi.read(5) == 1:
+				print("both buttons pressed, minute ++")
 				os.chdir("/home/pi")
 				time = datetime.now()
 				hr = time.hour
@@ -259,11 +274,13 @@ def keepReadingTVAButton():
 				if hr == 24:
 					hr = 0
 				new_time = time.replace(hour=hr, minute=mint)
-				currentTime = new_time.strftime("%H:%M:%S)
-				f2 = open("curTime.txt", "w")
-				f2.write(currentTime)
-				f2.close()
+				currentTime = new_time.strftime("%H:%M:%S")
+				#f2 = open("curTime.txt", "w")
+				#f2.write(currentTime)
+				#f2.close()
+				e = sub.call(['sudo','date', '+%T', '-s', currentTime])
 			if pi.read(27) == 1 and pi.read(6) == 1:
+				print("both buttons pressed, minute --")
 				os.chdir("/home/pi")
 				time = datetime.now()
 				hr = time.hour
@@ -275,12 +292,11 @@ def keepReadingTVAButton():
 				if hr == -1:
 					hr = 23
 				new_time = time.replace(hour=hr, minute=mint)
-				currentTime = new_time.strftime("%H:%M:%S)
-				f2 = open("curTime.txt", "w")
-				f2.write(currentTime)
-				f2.close()
-									
-				
+				currentTime = new_time.strftime("%H:%M:%S")
+				#f2 = open("curTime.txt", "w")
+				#f2.write(currentTime)
+				#f2.close()
+				e = sub.call(['sudo','date', '+%T', '-s', currentTime])
 
 	except Exception as e:
 		print(e)
