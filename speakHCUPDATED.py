@@ -262,6 +262,7 @@ def keepReadingTVAButton():
 			if pi.read(17) == 1 and playing:
                         	playing = False
 			while pi.read(27) == 1:
+				print("waiting for time adjustment...")
 				if pi.read(5) == 1:
 					print("both buttons pressed, minute ++")
 					os.chdir("/home/pi")
