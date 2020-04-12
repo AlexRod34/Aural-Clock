@@ -259,11 +259,11 @@ def keepReadingTVAButton():
 				os.system("amixer set Speaker 5%+")
 			if(pi.read(6) == 1):
 				os.system("amixer set Speaker 5%-")
-			if pi.read(17) == 1 and playing:
+			if pi.read(17) == 1 and playing: #alarm reset
                         	playing = False
 			i = 0
 			while pi.read(27) == 1:
-				if i == 0:
+				if i == 0: #speak the time
 					os.chdir("/home/pi")
 					#currentTime = time.ctime()
 					now = datetime.now()
@@ -316,6 +316,38 @@ def keepReadingTVAButton():
 					#f2.close()
 					e = sub.call(['sudo','date', '+%T', '-s', currentTime])
 				i += 1
+			while pi.read(17) == 1 and not playing:
+				print("waiting for alarm time adjustment...")
+				if pi.read(5) == 1:
+					print("both buttons pressed, minute ++")
+					os.chdir("/home/pi")
+					hr = alarmTime.split(":")[0]
+					mint = alarmTime.split(":")[1]
+					mint += 1
+					if mint == 60:
+						mint = 0
+						hr += 1
+					if hr == 24:
+						hr = 0
+					time = datetime.now()
+					new_time = time.replace(hour=hr, minute=mint, second=0)
+					alarmTime = new_time.strftime("%H:%M:%S")
+					print("alarm time: {}".format(alarmTime))
+				if pi.read(6) == 1:
+					print("both buttons pressed, minute --")
+					os.chdir("/home/pi")
+					hr = alarmTime.split(":")[0]
+					mint = alarmTime.split(":")[1]
+					mint -= 1
+					if mint == -1:
+						mint = 59
+						hr -= 1
+					if hr == -1:
+						hr = 23
+					time = datetime.now()
+					new_time = time.replace(hour=hr, minute=mint, second=0)
+					alarmTime = new_time.strftime("%H:%M:%S")
+					print("alarm time: {}".format(alarmTime))
 
 	except Exception as e:
 		print(e)
