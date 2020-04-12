@@ -237,21 +237,21 @@ def keepReadingTVAButton():
 	global playing
 	try:
 		while 1:
-			if (pi.read(27) == 1):
-				os.chdir("/home/pi")
-                		#currentTime = time.ctime()
-                		now = datetime.now()
-                		currentTime =""
-                		currentTime = now.strftime("%H:%M:%S")
-                		f2 = open("curTime.txt", "w")
-                		f2.write(currentTime[0:5])
-                		f2.close()
-                		os.chdir("/home/pi/flite")
-                		q = sub.Popen(['./bin/flite','/home/pi/curTime.txt','testtime.wav'])
-                		print(os.getcwd())
-                		q = sub.Popen(['aplay','testtime.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
-                		q.communicate()         
-                		print(currentTime)
+# 			if (pi.read(27) == 1):
+# 				os.chdir("/home/pi")
+#                 		#currentTime = time.ctime()
+#                 		now = datetime.now()
+#                 		currentTime =""
+#                 		currentTime = now.strftime("%H:%M:%S")
+#                 		f2 = open("curTime.txt", "w")
+#                 		f2.write(currentTime[0:5])
+#                 		f2.close()
+#                 		os.chdir("/home/pi/flite")
+#                 		q = sub.Popen(['./bin/flite','/home/pi/curTime.txt','testtime.wav'])
+#                 		print(os.getcwd())
+#                 		q = sub.Popen(['aplay','testtime.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
+#                 		q.communicate()         
+#                 		print(currentTime)
 
 
 
@@ -261,7 +261,23 @@ def keepReadingTVAButton():
 				os.system("amixer set Speaker 5%-")
 			if pi.read(17) == 1 and playing:
                         	playing = False
+			i = 0
 			while pi.read(27) == 1:
+				if i == 0:
+					os.chdir("/home/pi")
+					#currentTime = time.ctime()
+					now = datetime.now()
+					currentTime =""
+					currentTime = now.strftime("%H:%M:%S")
+					f2 = open("curTime.txt", "w")
+					f2.write(currentTime[0:5])
+					f2.close()
+					os.chdir("/home/pi/flite")
+					q = sub.Popen(['./bin/flite','/home/pi/curTime.txt','testtime.wav'])
+					print(os.getcwd())
+					q = sub.Popen(['aplay','testtime.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
+					q.communicate()         
+					print(currentTime)
 				print("waiting for time adjustment...")
 				if pi.read(5) == 1:
 					print("both buttons pressed, minute ++")
@@ -299,6 +315,7 @@ def keepReadingTVAButton():
 					#f2.write(currentTime)
 					#f2.close()
 					e = sub.call(['sudo','date', '+%T', '-s', currentTime])
+				i += 1
 
 	except Exception as e:
 		print(e)
