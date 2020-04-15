@@ -23,6 +23,8 @@ alarmTime  = "00:00"
 playing = False
 
 def readBytes():
+	global alarmF
+	global alarmTime
 	#pi = pigpio.pi()
 	#h1 = pi.serial_open('/dev/ttyS0', 9600)
 	s = ""
@@ -44,13 +46,14 @@ def readBytes():
         	c.close()
 		e = sub.call(['sudo','date', '+%T', '-s', str(s[1:])])
 	if str(s[0:2]) == "ON":
-		global alarmF
-		global alarmTime
+		#global alarmF
+		#global alarmTime
 		alarmF = True
                 alarmTime = str(s[2:]) + ":00"
 		print("The alarm is set to ON")
 		print(alarmTime)
 	elif str(s[0:3]) == "OFF":
+		#global alarmF
                 alarmF = False
 		print("The alarm is set to OFF")
 
@@ -114,7 +117,7 @@ def listenVoice():
 			print(stringP[0:4])
 			#if 'what time is it/what is the time' is heard
 			#print(str(phrase) + "hello")
-                	if (str(phrase) == "WHAT TIME IS IT" or str(phrase) == "WHAT IS THE TIME"):
+                	if (str(phrase) == "WHAT TIME IS IT" or str(phrase) == "WHAT IS THE TIME"): # tested
                         	print("what time is it was asked")
                         	os.chdir("/home/pi")
                         	currentTime =""
@@ -127,29 +130,33 @@ def listenVoice():
 				os.system("./bin/flite /home/pi/curTime.txt testtime.wav")
                         	print(currentTime)
                         	os.system("aplay testtime.wav")
-			#if 'alarm time' is heard
-			elif str(phrase) == "ALARM TIME":
+			#if 'alarm time' is heard		#tested
+			elif (str(phrase) == "ALARM TIME"):
 				print("alarm time was asked")
+				print(alarmTime)
+				if (alarmTime == "00:00" and alarmF == False):
+					print("Alarm has not been set")
+					alarmTime = "off" 
 				os.chdir("/home/pi")
 				f2 = open("alarmTime.txt", "w")
-				f2.write("The alarm is at " + alarmTime)
+				f2.write("The alarm is set to " + alarmTime)
 				f2.close()
 				os.chdir("/home/pi/flite")
-				os.system("./bin/flite /home/pi/curTime.txt alarm_time.wav")
+				os.system("./bin/flite /home/pi/alarmTime.txt alarm_time.wav")
                         	print(alarmTime)
                         	os.system("aplay alarm_time.wav")
-			#if 'reset alarm/alarm reset' is heard
+			#if 'reset alarm/alarm reset' is heard	# tested kinda
 			elif(str(phrase) == "RESET ALARM" or str(phrase) == "ALARM RESET"):
 				playing = False
 				print("Playing is false")
-			#if 'alarm on/alarm off' is heard
+			#if 'alarm on/alarm off' is heard	#tested
 			elif(stringP == "ALARM ON"):
 				alarmF = True
 				print("Alarm turned on")
 			elif(stringP == "ALARM OFF"):
 				alarmF = False
 				print("Alarm turned off")
-			#if 'volume up/volume down' is heard, or 'volume one hundred' 'volume zero'
+			#if 'volume up/volume down' is heard, or 'volume one hundred' 'volume zero' # tested
 			elif(str(phrase) == "VOLUME UP"):
 				os.system("amixer set Speaker 25%+")
 				print("Speaker up by 25%")
@@ -171,35 +178,40 @@ def listenVoice():
 				daynight = str(wordTime.split(" ",-1)[-1])
 				hour = str(wordTime.split(" ")[0])
 				minute = ""
-				#checks if HH is single digit, then pad with 0, else dont
-				if(w2n.word_to_num(hour) < 10):
-					time = time + "0" + str(w2n.word_to_num(hour))
-				else:
-					time = time + str(w2n.word_to_num(hour))
-				#checks MM if exists and is not the day/night i.e. THREE TWENTY ONE AM, else just pad with 00 
-				minute = str(wordTime.split(" ",1)[1])
-				if(len(wordTime.split(" ")) > 1 and (minute !="A") and (minute !="AM") and (minute !="P") and (minute !="PM")):
-        				if(w2n.word_to_num(minute) < 10):
-                				time = time + ":"+ "0" + str(w2n.word_to_num(minute))
-        				else:
-                				time = time + ":" + str(w2n.word_to_num(minute)) 
-				else:
-        				time = time + ":" + "00"
-				print("Alarm time: " + time + daynight)
-				if((daynight =="AM") or (daynight == "A")):
-					# correct time for AM time in military time
-					if(int(time[0:2]) == 12):		#midnight time
-						alarmTime = "00" + time[2:]
+				alarmTime = ""
+				try:
+					#checks if HH is single digit, then pad with 0, else dont
+					if(w2n.word_to_num(hour) < 10):
+						time = time + "0" + str(w2n.word_to_num(hour))
 					else:
-						alarmTime = time
-				elif((daynight == "PM") or (daynight == "p")):
-					# correct time for PM time in military time
-					if(int(time[0:2]) == 12):		#mid day time 
-						alarmTime = time
+						time = time + str(w2n.word_to_num(hour))
+					#checks MM if exists and is not the day/night i.e. THREE TWENTY ONE AM, else just pad with 00 
+					minute = str(wordTime.split(" ",1)[1])
+					if(len(wordTime.split(" ")) > 1 and (minute !="A") and (minute !="AM") and (minute !="P") and (minute !="PM")):
+        					if(w2n.word_to_num(minute) < 10):
+                					time = time + ":"+ "0" + str(w2n.word_to_num(minute))
+        					else:
+                					time = time + ":" + str(w2n.word_to_num(minute)) 
 					else:
-						tempHourAdjust = 12 + int(time[0:2])
-						alarmTime = str(tempHourAdjust) + time[2:]
-
+        					time = time + ":" + "00"
+					print("Alarm time: " + time + daynight)
+					if((daynight =="AM") or (daynight == "A")):
+						# correct time for AM time in military time
+						if(int(time[0:2]) == 12):		#midnight time
+							alarmTime = "00" + time[2:]
+						else:
+							alarmTime = time
+					elif((daynight == "PM") or (daynight == "P")):
+						# correct time for PM time in military time
+						if(int(time[0:2]) == 12):		#mid day time 
+							alarmTime = time
+						else:
+							tempHourAdjust = 12 + int(time[0:2])
+							alarmTime = str(tempHourAdjust) + time[2:]
+					alarmTime = alarmTime + ":00"
+					print("Alarm military time: " + alarmTime)
+				except:
+					pass
 
 
 			#elif(stringP[0:16] == "SET THE ALARM TO")
@@ -259,11 +271,11 @@ def keepReadingTVAButton():
 				os.system("amixer set Speaker 5%+")
 			if(pi.read(6) == 1):
 				os.system("amixer set Speaker 5%-")
-			if pi.read(17) == 1 and playing: #alarm reset
+			if pi.read(17) == 1 and playing:
                         	playing = False
 			i = 0
 			while pi.read(27) == 1:
-				if i == 0: #speak the time
+				if i == 0:
 					os.chdir("/home/pi")
 					#currentTime = time.ctime()
 					now = datetime.now()
