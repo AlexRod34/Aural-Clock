@@ -7,7 +7,7 @@ Must run "sudo pigpiod" before running python script for GPIO daemon to start.
 Then to execute: "python2.7 speakHCUPDATED.py"
 
 
-Button Functionality: TBA
+Button Functionality: Get current time, volume up/down, alarm reset, alarm adjustment, current time adjustment.
 
 
 
@@ -17,5 +17,3 @@ Speech Recognition Functionality:TBA
 
 Speech Synthesis Functionality:TBA
 
-
-Kevin was here.
