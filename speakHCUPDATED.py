@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import pigpio
+import time
 import subprocess as sub
 import os
 import sys
@@ -72,22 +73,6 @@ def readBytes():
 	p = sub.Popen(['aplay','test.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
 	p.communicate()
 
-def readTime(): # doesnt get called
-	if pi.wait_for_edge(27):
-		os.chdir("/home/pi")
-		#currentTime = time.ctime()
-		now = datetime.now()
-		currentTime =""
-		currentTime = now.strftime("%H:%M:%S")
-		f2 = open("curTime.txt", "w")
-		f2.write(currentTime)
-		f2.close()
-		os.chdir("/home/pi/flite")
-        	q = sub.Popen(['./bin/flite','/home/pi/curTime.txt','testtime.wav'])
-		print(os.getcwd())
-        	q = sub.Popen(['aplay','testtime.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
-        	q.communicate()		
-		print(currentTime)
 
 def keepReadingBT():
 	while 1:
@@ -96,8 +81,8 @@ def listenVoice():
 	global playing
 	global alarmF
 	global alarmTime
+	checkPhrase = False
 	while 1:
-		# TODO: detect speech and obtain string
 		# sets up speech class to listen
 		speech = LiveSpeech(
         		audio_device = 'plughw:1,0',
@@ -114,104 +99,114 @@ def listenVoice():
 			print("listening")
 			print(phrase)
 			stringP = str(phrase)
-			print(stringP[0:4])
-			#if 'what time is it/what is the time' is heard
-			#print(str(phrase) + "hello")
-                	if (str(phrase) == "WHAT TIME IS IT" or str(phrase) == "WHAT IS THE TIME"): # tested
-                        	print("what time is it was asked")
-                        	os.chdir("/home/pi")
-                        	currentTime =""
-                        	now = datetime.now()
-                        	currentTime = now.strftime("%H:%M:%S")
-                        	f2 = open("curTime.txt", "w")
-                        	f2.write("The time is " + currentTime[0:5])
-                        	f2.close()
-                        	os.chdir("/home/pi/flite")
-				os.system("./bin/flite /home/pi/curTime.txt testtime.wav")
-                        	print(currentTime)
-                        	os.system("aplay testtime.wav")
-			#if 'alarm time' is heard		#tested
-			elif (str(phrase) == "ALARM TIME"):
-				print("alarm time was asked")
-				print(alarmTime)
-				if (alarmTime == "00:00" and alarmF == False):
-					print("Alarm has not been set")
-					alarmTime = "off" 
+			#print(stringP[0:4])
+			# beep saying that next phrase will be needing to be analyzed by code, else skip
+			if(str(phrase) == "OKAY PI"):
 				os.chdir("/home/pi")
-				f2 = open("alarmTime.txt", "w")
-				f2.write("The alarm is set to " + alarmTime)
-				f2.close()
-				os.chdir("/home/pi/flite")
-				os.system("./bin/flite /home/pi/alarmTime.txt alarm_time.wav")
-                        	print(alarmTime)
-                        	os.system("aplay alarm_time.wav")
-			#if 'reset alarm/alarm reset' is heard	# tested kinda
-			elif(str(phrase) == "RESET ALARM" or str(phrase) == "ALARM RESET"):
-				playing = False
-				print("Playing is false")
-			#if 'alarm on/alarm off' is heard	#tested
-			elif(stringP == "ALARM ON"):
-				alarmF = True
-				print("Alarm turned on")
-			elif(stringP == "ALARM OFF"):
-				alarmF = False
-				print("Alarm turned off")
-			#if 'volume up/volume down' is heard, or 'volume one hundred' 'volume zero' # tested
-			elif(str(phrase) == "VOLUME UP"):
-				os.system("amixer set Speaker 25%+")
-				print("Speaker up by 25%")
-			elif(str(phrase) == "VOLUME DOWN"):
-				os.system("amixer set Speaker 25%-")
-				print("Speaker down by 25%")
-			elif(str(phrase) == "VOLUME ONE HUNDRED"):
-				os.system("amixer set Speaker 100%")
-				print("Speaker set to 100%")
-			elif(str(phrase) == "VOLUME ZERO"):
-				os.system("amixer set Speaker 0%")
-				print("Speaker set to 0%")
-			#if 'set alarm to xxxx' or 'set the alarm to' ---- will take some word2num processing to extract correct time
-			elif(stringP[0:12] == "SET ALARM TO"):
-				wordTime = stringP[13:] # gets time in word format i.e "three twenty one" or "two forty" or "two"
-				print("Alarm set to: " + wordTime)
-				#need to get alarm time in format: HH:MM -> will need to also get AM or PM at the end
-				time = ""
-				daynight = str(wordTime.split(" ",-1)[-1])
-				hour = str(wordTime.split(" ")[0])
-				minute = ""
-				alarmTime = ""
-				try:
-					#checks if HH is single digit, then pad with 0, else dont
-					if(w2n.word_to_num(hour) < 10):
-						time = time + "0" + str(w2n.word_to_num(hour))
-					else:
-						time = time + str(w2n.word_to_num(hour))
-					#checks MM if exists and is not the day/night i.e. THREE TWENTY ONE AM, else just pad with 00 
-					minute = str(wordTime.split(" ",1)[1])
-					if(len(wordTime.split(" ")) > 1 and (minute !="A") and (minute !="AM") and (minute !="P") and (minute !="PM")):
-        					if(w2n.word_to_num(minute) < 10):
-                					time = time + ":"+ "0" + str(w2n.word_to_num(minute))
-        					else:
-                					time = time + ":" + str(w2n.word_to_num(minute)) 
-					else:
-        					time = time + ":" + "00"
-					print("Alarm time: " + time + daynight)
-					if((daynight =="AM") or (daynight == "A")):
-						# correct time for AM time in military time
-						if(int(time[0:2]) == 12):		#midnight time
-							alarmTime = "00" + time[2:]
+				os.system("aplay beep.wav")
+				#time.sleep(1)
+				checkPhrase = True
+				continue
+			# after beep is heard analyze to see what was heard, reset phrase flag
+			elif(checkPhrase == True):
+				#if 'what time is it/what is the time' is heard
+	                	if (str(phrase) == "WHAT TIME IS IT" or str(phrase) == "WHAT IS THE TIME"): # tested
+	                        	print("what time is it was asked")
+	                        	os.chdir("/home/pi")
+	                        	currentTime =""
+	                        	now = datetime.now()
+	                        	currentTime = now.strftime("%H:%M:%S")
+	                        	f2 = open("curTime.txt", "w")
+	                        	f2.write("The time is " + currentTime[0:5])
+	                        	f2.close()
+	                        	os.chdir("/home/pi/flite")
+					os.system("./bin/flite /home/pi/curTime.txt testtime.wav")
+	                        	print(currentTime)
+	                        	os.system("aplay testtime.wav")
+				#if 'alarm time' is heard		#tested
+				elif (str(phrase) == "ALARM TIME"):
+					print("alarm time was asked")
+					print(alarmTime)
+					if (alarmTime == "00:00" and alarmF == False):
+						print("Alarm has not been set")
+						alarmTime = "off" 
+					os.chdir("/home/pi")
+					f2 = open("alarmTime.txt", "w")
+					f2.write("The alarm is set to " + alarmTime)
+					f2.close()
+					os.chdir("/home/pi/flite")
+					os.system("./bin/flite /home/pi/alarmTime.txt alarm_time.wav")
+	                        	print(alarmTime)
+	                        	os.system("aplay alarm_time.wav")
+				#if 'reset alarm/alarm reset' is heard	# tested kinda
+				elif(str(phrase) == "RESET ALARM" or str(phrase) == "ALARM RESET"):
+					playing = False
+					print("Playing is false")
+				#if 'alarm on/alarm off' is heard	#tested
+				elif(stringP == "ALARM ON"):
+					alarmF = True
+					print("Alarm turned on")
+				elif(stringP == "ALARM OFF"):
+					alarmF = False
+					print("Alarm turned off")
+				#if 'volume up/volume down' is heard, or 'volume one hundred' 'volume zero' # tested
+				elif(str(phrase) == "VOLUME UP"):
+					os.system("amixer set Speaker 25%+")
+					print("Speaker up by 25%")
+				elif(str(phrase) == "VOLUME DOWN"):
+					os.system("amixer set Speaker 25%-")
+					print("Speaker down by 25%")
+				elif(str(phrase) == "VOLUME ONE HUNDRED"):
+					os.system("amixer set Speaker 100%")
+					print("Speaker set to 100%")
+				elif(str(phrase) == "VOLUME ZERO"):
+					os.system("amixer set Speaker 0%")
+					print("Speaker set to 0%")
+				#if 'set alarm to xxxx' or 'set the alarm to' ---- will take some word2num processing to extract correct time
+				elif(stringP[0:12] == "SET ALARM TO"):
+					wordTime = stringP[13:] # gets time in word format i.e "three twenty one" or "two forty" or "two"
+					print("Alarm set to: " + wordTime)
+					#need to get alarm time in format: HH:MM -> will need to also get AM or PM at the end
+					time = ""
+					daynight = str(wordTime.split(" ",-1)[-1])
+					hour = str(wordTime.split(" ")[0])
+					minute = ""
+					alarmTime = ""
+					try:
+						#checks if HH is single digit, then pad with 0, else dont
+						if(w2n.word_to_num(hour) < 10):
+							time = time + "0" + str(w2n.word_to_num(hour))
 						else:
-							alarmTime = time
-					elif((daynight == "PM") or (daynight == "P")):
-						# correct time for PM time in military time
-						if(int(time[0:2]) == 12):		#mid day time 
-							alarmTime = time
+							time = time + str(w2n.word_to_num(hour))
+						#checks MM if exists and is not the day/night i.e. THREE TWENTY ONE AM, else just pad with 00 
+						minute = str(wordTime.split(" ",1)[1])
+						if(len(wordTime.split(" ")) > 1 and (minute !="A") and (minute !="AM") and (minute !="P") and (minute !="PM")):
+	        					if(w2n.word_to_num(minute) < 10):
+	                					time = time + ":"+ "0" + str(w2n.word_to_num(minute))
+	        					else:
+	                					time = time + ":" + str(w2n.word_to_num(minute)) 
 						else:
-							tempHourAdjust = 12 + int(time[0:2])
-							alarmTime = str(tempHourAdjust) + time[2:]
-					alarmTime = alarmTime + ":00"
-					print("Alarm military time: " + alarmTime)
-				except:
-					pass
+	        					time = time + ":" + "00"
+						print("Alarm time: " + time + daynight)
+						if((daynight =="AM") or (daynight == "A")):
+							# correct time for AM time in military time
+							if(int(time[0:2]) == 12):		#midnight time
+								alarmTime = "00" + time[2:]
+							else:
+								alarmTime = time
+						elif((daynight == "PM") or (daynight == "P")):
+							# correct time for PM time in military time
+							if(int(time[0:2]) == 12):		#mid day time 
+								alarmTime = time
+							else:
+								tempHourAdjust = 12 + int(time[0:2])
+								alarmTime = str(tempHourAdjust) + time[2:]
+						alarmTime = alarmTime + ":00"
+						print("Alarm military time: " + alarmTime)
+					except:
+						checkPhrase = False
+						pass
+				checkPhrase = False
 
 
 			#elif(stringP[0:16] == "SET THE ALARM TO")
@@ -247,25 +242,9 @@ def playAlarm():
 
 def keepReadingTVAButton():
 	global playing
+	global alarmTime
 	try:
 		while 1:
-# 			if (pi.read(27) == 1):
-# 				os.chdir("/home/pi")
-#                 		#currentTime = time.ctime()
-#                 		now = datetime.now()
-#                 		currentTime =""
-#                 		currentTime = now.strftime("%H:%M:%S")
-#                 		f2 = open("curTime.txt", "w")
-#                 		f2.write(currentTime[0:5])
-#                 		f2.close()
-#                 		os.chdir("/home/pi/flite")
-#                 		q = sub.Popen(['./bin/flite','/home/pi/curTime.txt','testtime.wav'])
-#                 		print(os.getcwd())
-#                 		q = sub.Popen(['aplay','testtime.wav'], stdout=sub.PIPE, stderr=sub.PIPE)
-#                 		q.communicate()         
-#                 		print(currentTime)
-
-
 
 			if(pi.read(5) == 1):
 				os.system("amixer set Speaker 5%+")
@@ -333,8 +312,8 @@ def keepReadingTVAButton():
 				if pi.read(5) == 1:
 					print("both buttons pressed, minute ++")
 					os.chdir("/home/pi")
-					hr = alarmTime.split(":")[0]
-					mint = alarmTime.split(":")[1]
+					hr = int(alarmTime.split(":")[0])
+					mint = int(alarmTime.split(":")[1])
 					mint += 1
 					if mint == 60:
 						mint = 0
@@ -348,8 +327,8 @@ def keepReadingTVAButton():
 				if pi.read(6) == 1:
 					print("both buttons pressed, minute --")
 					os.chdir("/home/pi")
-					hr = alarmTime.split(":")[0]
-					mint = alarmTime.split(":")[1]
+					hr = int(alarmTime.split(":")[0])
+					mint = int(alarmTime.split(":")[1])
 					mint -= 1
 					if mint == -1:
 						mint = 59
