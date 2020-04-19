@@ -13,3 +13,5 @@ Speech Recognition Functionality: User must say "Okay pi" to prompt the Pi to an
 
 
 Speech Synthesis Functionality: Depending on user action, Pi will respond with speech feedback using flite (text to speech synthesis engine that is a lightweight version of festival)
+
+Also has an optional Bluetooth mobile app that runs on Android: Aural Clock App for setting current time and alarm time wirelessly.
